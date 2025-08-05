@@ -11,20 +11,28 @@ namespace IMS.Infrastructure.Repositories
     {
         public NotFoundStockException(string message) : base(message) { }
     }
-    public class SalesApprovalRepository : ISalesManager
+    public class SalesApprovalRepository : ISalesApproval
     {
+
+        #region DBContext
+
         private readonly ApplicationDbContext Context;
         public SalesApprovalRepository(ApplicationDbContext Context)
         {
             this.Context = Context;
         }
 
-        public async Task<bool> CanApproveSale(SaleManagerDto salemanagerDto)
-        {
+        #endregion
 
+        #region GET
+
+        public async Task<int> GetTotalNormalStockAsync(int productId, int warehouseId)
+        {
             //Total Normal Product Based on Warehouse, Product.
-            var TotalNormalProductPerWarehouse = await Context.ProductReport.Where(report => report.Stock.PurchaseDetails.ProductId == salemanagerDto.ProductId &&
-            report.Stock.WarehouseId == salemanagerDto.WarehouseId).
+            var TotalNormalProductPerWarehouse = await Context.ProductReport.
+                Where(report => report.Stock.PurchaseDetails.ProductId == productId &&
+            
+            report.Stock.WarehouseId == warehouseId).
             GroupBy(report => report.Stock.PurchaseDetails.Product.Name).
             Select(g => new ViewProductReportDto
             {
@@ -32,51 +40,58 @@ namespace IMS.Infrastructure.Repositories
                 CountNormalProduct = g.Sum(r => r.Normal)
             }).FirstOrDefaultAsync();
 
-            if(TotalNormalProductPerWarehouse == null)
+            if (TotalNormalProductPerWarehouse == null)
             {
                 throw new NotFoundStockException("No Available in Stock");
             }
+
+            return TotalNormalProductPerWarehouse.CountNormalProduct;
+        }
+
+        public async Task<int> GetTotalSoldStockAsync(int productId, int warehouseId)
+        {
             //Total Sold Product Based on Warehouse, Product
             int totalSoldProductPerWarehouse = await Context.SalesManager
              .Where(m =>
-                 m.WarehouseId == salemanagerDto.WarehouseId &&
-                 m.SaleDetails.ProductId == salemanagerDto.ProductId &&
+                 m.WarehouseId == warehouseId &&
+                 m.SaleDetails.ProductId == productId &&
                  m.SaleDetails.Status == "Approved")
              .SumAsync(m => m.SaleDetails.Quantity);
-            
 
+            return totalSoldProductPerWarehouse;
+        }
+
+        public async Task<int> GetCurrentSaleQuantityAsync(int saleDetailId)
+        {
             //Curent Quantity Which means Current Order Quantity
-            var CurrentQuantity = await Context.SaleDetails.Where(CQ => CQ.Id == salemanagerDto.SaleDetailsId).
+            var CurrentQuantity = await Context.SaleDetails.Where(CQ => CQ.Id == saleDetailId).
                 Select(s => s.Quantity).FirstOrDefaultAsync();
 
-            //Total Available Stock Based on this Warehouse, Product
-
-            var AvailableProduct = TotalNormalProductPerWarehouse.CountNormalProduct - totalSoldProductPerWarehouse;
-
-            
-            //Logic if Product is Available in Stock, Move to approve 
-            if(AvailableProduct >= CurrentQuantity)
-            {
-              var saleDetails = await Context.SaleDetails
-             .FirstOrDefaultAsync(s => s.Id == salemanagerDto.SaleDetailsId);
-
-                if (saleDetails != null)
-                {
-                    saleDetails.Status = "Approved";
-                    await Context.SaveChangesAsync();
-                    var Manager = new SaleManager
-                    {
-                        WarehouseId = salemanagerDto.WarehouseId,
-                        SaleDetailsId = salemanagerDto.SaleDetailsId,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    Context.SalesManager.Add(Manager);
-                    await Context.SaveChangesAsync();
-                    return true;
-                }
-                
-            }
-             return false;
+            return CurrentQuantity;
         }
+
+        #endregion
+        public async Task<bool> MoveToApprove(int WarehouseId, int SaleDetailsId)
+        {
+            var saleDetails = await Context.SaleDetails
+             .FirstOrDefaultAsync(s => s.Id == SaleDetailsId);
+
+            if (saleDetails != null)
+            {
+                saleDetails.Status = "Approved";
+                await Context.SaveChangesAsync();
+                var Manager = new SaleManager
+                {
+                    WarehouseId = WarehouseId,
+                    SaleDetailsId = SaleDetailsId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                Context.SalesManager.Add(Manager);
+                await Context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        
     }
 }

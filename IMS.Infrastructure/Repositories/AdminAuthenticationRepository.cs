@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -30,12 +31,13 @@ namespace IMS.Infrastructure.Repositories
 
         public async Task<string> AuthenticateUser(string username, string Password)
         {
-            System.Diagnostics.Debug.WriteLine(username);
 
             var user = await context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            System.Diagnostics.Debug.WriteLine(user.Username);
             if (user == null) return null;
 
             var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Password, Password);
+            System.Diagnostics.Debug.WriteLine(verificationResult);
             if (verificationResult != PasswordVerificationResult.Success) return null;
 
             var token = GenerateJwtToken(user.Username, user.Role);

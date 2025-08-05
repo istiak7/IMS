@@ -1,4 +1,5 @@
-﻿using IMS.Infrastructure.Repositories;
+﻿using IMS.Application.Interface;
+using IMS.Infrastructure.Repositories;
 using Inventory_Management_System.Dtos.Products;
 using Inventory_Management_System.Dtos.SaleDto;
 using Inventory_Management_System.Repositories.Interfaces;
@@ -14,10 +15,10 @@ namespace Inventory_Management_System.Controllers
 
     public class SalesManagerController : ControllerBase
     {
-        private readonly ISalesManager repository;
-        public SalesManagerController(ISalesManager repository)
+        private readonly ISaleApprovalService service;
+        public SalesManagerController(ISaleApprovalService service)
         {
-            this.repository = repository;
+            this.service = service;
         }
         [HttpPost("approve-order/")]
         public async Task<IActionResult> CountNormalProductByWarehouse(SaleManagerDto salemanagerDto)
@@ -25,7 +26,7 @@ namespace Inventory_Management_System.Controllers
           
             try
             {
-                await repository.CanApproveSale(salemanagerDto);
+                await service.CanApproveSale(salemanagerDto);
                 return Ok("Successfully Saled this Product");
             }
             catch (NotFoundStockException message)
