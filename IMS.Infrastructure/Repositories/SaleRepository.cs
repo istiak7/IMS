@@ -14,26 +14,18 @@ namespace IMS.Infrastructure.Repositories
         {
             this.Context = Context;
         }
-        public async Task<bool> SellProduct(CreateSaleRequestDto request)
+
+        public async Task<bool> AddSaleOrder(CreateSaleRequestDto request)
         {
             var sale = new Sale
             {
                 CustomerId = request.CustomerID,
                 CreatedAt = DateTime.UtcNow
             };
-            try
-            {
-                Context.Sales.Add(sale);
-                await Context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                throw new DbUpdateException("Invalid Customer Id");
-            }
-            catch (Exception)
-            {
-                throw new Exception("An Error Occurs");
-            }
+
+            Context.Sales.Add(sale);
+            await Context.SaveChangesAsync();
+
             var SaleDetails = request.Products.Select(product => new SaleDetails
             {
                 SaleId = sale.Id,
@@ -43,20 +35,10 @@ namespace IMS.Infrastructure.Repositories
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             }).ToList();
-            try
-            {
-                Context.SaleDetails.AddRange(SaleDetails);
-                await Context.SaveChangesAsync();
-                return true;
-            }
-            catch (DbUpdateException)
-            {
-                throw new DbUpdateException("Invalid Product Id or Data updation error");
-            }
-            catch (Exception)
-            {
-                throw new Exception("An Error Occurs");
-            }
+
+            Context.SaleDetails.AddRange(SaleDetails);
+            await Context.SaveChangesAsync();
+            return true;
 
         }
     }

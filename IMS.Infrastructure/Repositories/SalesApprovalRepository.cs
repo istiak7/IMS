@@ -7,10 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IMS.Infrastructure.Repositories
 {
-    public class NotFoundStockException : Exception
-    {
-        public NotFoundStockException(string message) : base(message) { }
-    }
+   
     public class SalesApprovalRepository : ISalesApproval
     {
 
@@ -40,10 +37,7 @@ namespace IMS.Infrastructure.Repositories
                 CountNormalProduct = g.Sum(r => r.Normal)
             }).FirstOrDefaultAsync();
 
-            if (TotalNormalProductPerWarehouse == null)
-            {
-                throw new NotFoundStockException("No Available in Stock");
-            }
+           
 
             return TotalNormalProductPerWarehouse.CountNormalProduct;
         }

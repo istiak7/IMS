@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using IMS.Application.Interface;
+using IMS.Application.ServiceInterface;
 using IMS.Application.Services;
 using IMS.Infrastructure.Repositories;
 using Inventory_Management_System.ApplicationDb;
@@ -85,6 +86,11 @@ builder.Services.AddScoped<IRecieveProduct, RecieveProductRepository>();
 builder.Services.AddScoped<IInventoryReport, InventoryReportRepository>();
 builder.Services.AddScoped<ISalesApproval, SalesApprovalRepository>();
 builder.Services.AddScoped<ISaleApprovalService, SaleApprovalService>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<IRecieveProductService, RecieveProductService>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+
 // Add just the password hasher service
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 

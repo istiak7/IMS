@@ -1,4 +1,5 @@
-﻿using Inventory_Management_System.Dtos.Purchase;
+﻿using IMS.Application.ServiceInterface;
+using Inventory_Management_System.Dtos.Purchase;
 using Inventory_Management_System.Dtos.Sale;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +14,10 @@ namespace Inventory_Management_System.Controllers
 
     public class SaleProductController : ControllerBase
     {
-        private readonly ISaleRepository repository;
-        public SaleProductController(ISaleRepository repository)
+        private readonly ISaleService _service;
+        public SaleProductController(ISaleService service)
         {
-            this.repository = repository;
+            _service = service;
         }
 
         [HttpPost("Sale-Product/")]
@@ -24,7 +25,7 @@ namespace Inventory_Management_System.Controllers
         {
             try
             {
-                await repository.SellProduct(request);
+                await _service.SaleItemsOrder(request);
                 return Ok("Sale Sucessfully!");
             }
             catch (DbUpdateException message)

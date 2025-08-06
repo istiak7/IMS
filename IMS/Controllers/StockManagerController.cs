@@ -1,4 +1,5 @@
 ﻿using IMS.Application.Dtos.Products;
+using IMS.Application.ServiceInterface;
 using Inventory_Management_System.Dtos.StockInsertDto;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -11,17 +12,17 @@ namespace Inventory_Management_System.Controllers
     [Authorize]
     public class StockManagerController : ControllerBase
     {
-        private readonly IStockRepository repository;
-        private readonly IRecieveProduct RecieveProductrepository;
-        public StockManagerController(IStockRepository repository, IRecieveProduct RecieveProductrepository)
+        private readonly IStockService _stockservice;
+        private readonly IRecieveProductService _RecieveProductService;
+        public StockManagerController(IStockService stockservice, IRecieveProductService _RecieveProductService)
         {
-            this.repository = repository;
-            this.RecieveProductrepository = RecieveProductrepository;
+            _stockservice = stockservice;
+            _RecieveProductService = _RecieveProductService;
         }
         [HttpPost("Add-from-Purchase/")]
         public async Task<IActionResult> AddStockFromPurchase([FromForm] StockInsertDto stockDto)
         {
-            var result = await repository.AddStockFromPurchase(stockDto);
+            var result = await _stockservice.AddStockFromPurchase(stockDto);
             if(result == false)
             {
                 return NotFound();
@@ -34,7 +35,7 @@ namespace Inventory_Management_System.Controllers
         [HttpPost("Receive")]
         public async Task<IActionResult> ReceiveProduct([FromBody] RecieveProductDto dto)
         {
-            var result = await RecieveProductrepository.RecieveProduct(dto);
+            var result = await  _RecieveProductService.RecieveProducts(dto);
             if (!result)
                 return BadRequest("Invalid data or stock not found");
             return Ok("Product received and recorded");

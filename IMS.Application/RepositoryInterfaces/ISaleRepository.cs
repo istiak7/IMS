@@ -5,6 +5,8 @@ namespace Inventory_Management_System.Repositories.Interfaces
 {
     public interface ISaleRepository
     {
-        Task<bool> SellProduct(CreateSaleRequestDto products);
+       // Task<bool> SellProduct(CreateSaleRequestDto products);
+        Task<bool> AddSaleOrder(CreateSaleRequestDto request);
+
     }
 }

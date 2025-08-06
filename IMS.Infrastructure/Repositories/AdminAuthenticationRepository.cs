@@ -33,11 +33,11 @@ namespace IMS.Infrastructure.Repositories
         {
 
             var user = await context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            System.Diagnostics.Debug.WriteLine(user.Username);
+            //System.Diagnostics.Debug.WriteLine(user.Username);
             if (user == null) return null;
 
             var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Password, Password);
-            System.Diagnostics.Debug.WriteLine(verificationResult);
+            //System.Diagnostics.Debug.WriteLine(verificationResult);
             if (verificationResult != PasswordVerificationResult.Success) return null;
 
             var token = GenerateJwtToken(user.Username, user.Role);

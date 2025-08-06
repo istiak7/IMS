@@ -1,4 +1,5 @@
-﻿using Inventory_Management_System.Dtos.Purchase;
+﻿using IMS.Application.ServiceInterface;
+using Inventory_Management_System.Dtos.Purchase;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,10 @@ namespace Inventory_Management_System.Controllers
     [Authorize]
     public class PurchaseProductController : ControllerBase
     {
-        private readonly IPurchaseRepository repository;
-        public PurchaseProductController(IPurchaseRepository repository)
+        private readonly IPurchaseService _service;
+        public PurchaseProductController(IPurchaseService service)
         {
-            this.repository = repository;
+            _service = service;
         }
 
         [HttpPost("Purchase-Product/")]
@@ -22,7 +23,7 @@ namespace Inventory_Management_System.Controllers
         {
             try
             {
-                await repository.AddPurchase(request);
+                await _service.AddPurchase(request);
                 return Ok("Successfully Purchase Added.");
             }
             catch (DbUpdateException)

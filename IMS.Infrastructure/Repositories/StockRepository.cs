@@ -3,6 +3,7 @@ using Inventory_Management_System.Dtos.StockInsertDto;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Collections;
 
 namespace IMS.Infrastructure.Repositories
 {

@@ -1,5 +1,5 @@
 ﻿using IMS.Application.Interface;
-using IMS.Infrastructure.Repositories;
+using IMS.Application.Services;
 using Inventory_Management_System.Dtos.Products;
 using Inventory_Management_System.Dtos.SaleDto;
 using Inventory_Management_System.Repositories.Interfaces;
