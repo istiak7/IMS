@@ -1,4 +1,8 @@
-﻿using IMS.Application.Dtos.WarehouseInfo;
+﻿using Dapper;
+using IMS.Application.Dtos.WarehouseInfo;
+using IMS.Application.Helpers;
+using IMS.Core.Utility;
+using IMS.Infrastructure.Dapper;
 using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Repositories.Interfaces;
@@ -9,47 +13,61 @@ namespace IMS.Infrastructure.Repositories
     public class WarehouseRepository : IWarehouseRepository
     {
         private readonly ApplicationDbContext Context;
-        public WarehouseRepository(ApplicationDbContext Context)
+        private readonly IDapper _dapper;
+        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper)
         {
             this.Context = Context;
+            _dapper = dapper;
         }
 
         public async Task<List<ViewWarehouseDto>> GetWarehouses()
         {
-            var Warehouses = await Context.Warehouses.ToListAsync();
+           
+            var sql = "SELECT * FROM \"Warehouses\"";
+
+            var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
+
             List<ViewWarehouseDto> WarehouseDto = [];
+
             foreach (var warehouse in Warehouses)
             {
-                ViewWarehouseDto dto = new ViewWarehouseDto()
-                {
-                    Name = warehouse.Name,
-                    Location = warehouse.Location,
-                    Phone = warehouse.PhoneNumber
-                };
-                WarehouseDto.Add(dto);
+                WarehouseDto.Add(warehouse);
             }
+
             return WarehouseDto;
         }
 
-        public async Task<ViewWarehouseDto> GetByWarehouseId(int id)
+        public async Task<ResponseModel> GetByWarehouseId(int id)
         {
-            var Warehouse = await Context.Warehouses.FirstOrDefaultAsync(warehouse => warehouse.Id == id);
-            ViewWarehouseDto dto = new()
+            
+            var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add("Id", id);
+
+            var Warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
+            
+            if(Warehouse != null)
             {
-                Name = Warehouse.Name,
-                Location = Warehouse.Location,
-                Phone = Warehouse.PhoneNumber
-            };
-            return dto;
+                return Utilities.GetSuccessMsg("Successfully Data Found", Warehouse);
+            }
+
+            else
+            {
+                return Utilities.GetNoDataFoundMsg();
+            }
         }
 
-        public async Task<bool> AddWarehouse(CreateWarehouseDto warehouse)
+        public async Task<ResponseModel> AddWarehouse(CreateWarehouseDto warehouse)
         {
             var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(name => name.Name == warehouse.Name);
+
             if (ExistingWarehouse != null)
             {
-                return false;
+                return Utilities.GetAlreadyExistMsg("The Data You Already Added");
             }
+
             var NewWarehouse = new Warehouse
             {
                 Name = warehouse.Name,
@@ -57,45 +75,81 @@ namespace IMS.Infrastructure.Repositories
                 PhoneNumber = warehouse.Phone,
                 CreatedAt = DateTime.UtcNow
             };
+
             await Context.Warehouses.AddAsync(NewWarehouse);
-            await Context.SaveChangesAsync();
-            return true;
-        }
 
-        public async Task<ViewWarehouseDto> UpdateWarehouse(int id, CreateWarehouseDto warehouse)
-        {
-            var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
-            if (ExistingWarehouse == null)
+            int affectedRows = await Context.SaveChangesAsync();
+
+            if(affectedRows > 0)
             {
-                return null;
+                return Utilities.GetSuccessMsg("Successfully Added New Warehouse");
             }
 
-            ExistingWarehouse.Name = warehouse.Name;
-            ExistingWarehouse.Location = warehouse.Location;
-            ExistingWarehouse.PhoneNumber = warehouse.Phone;
-            ExistingWarehouse.UpdatedAt = DateTime.UtcNow;
-
-            Context.Warehouses.Update(ExistingWarehouse);
-            await Context.SaveChangesAsync();
-
-            return new ViewWarehouseDto
+            else
             {
-                Name = ExistingWarehouse.Name,
-                Location = ExistingWarehouse.Location,
-                Phone = ExistingWarehouse.PhoneNumber
-            };
+                return Utilities.GetInternalServerErrorMsg("An Error Occurs");
+            }
         }
 
-        public async Task<bool> DeleteWarehouse(int id)
+        public async Task<ResponseModel> UpdateWarehouse(int id, CreateWarehouseDto warehouse)
+        {
+            try
+            {
+                var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
+
+                if (ExistingWarehouse == null)
+                {
+                    return Utilities.GetNoDataFoundMsg();
+                }
+
+                ExistingWarehouse.Name = warehouse.Name;
+                ExistingWarehouse.Location = warehouse.Location;
+                ExistingWarehouse.PhoneNumber = warehouse.Phone;
+                ExistingWarehouse.UpdatedAt = DateTime.UtcNow;
+
+                Context.Warehouses.Update(ExistingWarehouse);
+                int affectedRows = await Context.SaveChangesAsync();
+
+                if (affectedRows > 0)
+                {
+                    return Utilities.GetSuccessMsg("Successfully Updated");
+                }
+
+                else
+                {
+                    return Utilities.GetInternalServerErrorMsg("An Error Occurs");
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+        }
+
+        public async Task<ResponseModel> DeleteWarehouse(int id)
         {
             var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
+
             if (ExistingWarehouse == null)
             {
-                return false;
+                return Utilities.GetNoDataFoundMsg();
             }
+
             Context.Warehouses.Remove(ExistingWarehouse);
-            await Context.SaveChangesAsync();
-            return true;
+
+            int affectedRow = await Context.SaveChangesAsync();
+
+            if(affectedRow > 0)
+            {
+                return Utilities.GetSuccessMsg("Successfully Deleted", ExistingWarehouse);
+            }
+
+            else
+            {
+                return Utilities.GetInternalServerErrorMsg("An Error Occurs");
+            }
         }
     }
 }

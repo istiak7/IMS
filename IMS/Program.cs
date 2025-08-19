@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using IMS.Application.Interface;
 using IMS.Application.ServiceInterface;
 using IMS.Application.Services;
+using IMS.Infrastructure.Dapper;
 using IMS.Infrastructure.Repositories;
 using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Models;
@@ -72,6 +73,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IDapper, DapperContext>();
 builder.Services.AddScoped<IAuthentication, AdminAuthenticationRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
@@ -90,6 +92,7 @@ builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IRecieveProductService, RecieveProductService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 
 // Add just the password hasher service
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

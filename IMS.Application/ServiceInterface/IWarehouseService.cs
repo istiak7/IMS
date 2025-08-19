@@ -1,9 +1,14 @@
 ﻿using IMS.Application.Dtos.WarehouseInfo;
 using IMS.Core.Utility;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Inventory_Management_System.Repositories.Interfaces
+namespace IMS.Application.ServiceInterface
 {
-    public interface IWarehouseRepository
+    public interface IWarehouseService
     {
         Task<List<ViewWarehouseDto>> GetWarehouses();
         Task<ResponseModel> GetByWarehouseId(int id);

@@ -1,4 +1,6 @@
 ﻿using IMS.Application.Dtos.WarehouseInfo;
+using IMS.Application.ServiceInterface;
+using IMS.Application.Services;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,56 +12,55 @@ namespace Inventory_Management_System.Controllers
     [Authorize]
     public class WarehousesController : ControllerBase
     {
-        private readonly IWarehouseRepository WarehouseRepository;
-        public WarehousesController(IWarehouseRepository WarehouseRepository)
+        private readonly IWarehouseService _WarehouseService;
+        public WarehousesController(IWarehouseService WarehouseService)
         {
-            this.WarehouseRepository = WarehouseRepository;
+            _WarehouseService = WarehouseService;
         }
 
         // Get All Warehouses
         [HttpGet("Warehouses/")]
         public async Task<IActionResult> GetWarehouses()
         {
-            return Ok(await WarehouseRepository.GetWarehouses());
+
+            return Ok(await _WarehouseService.GetWarehouses());
+
         }
 
         //Get Warehouse By Id
         [HttpGet("Warehouses/{id}")]
         public async Task<IActionResult> GetByWarehouseId(int id)
         {
-            return Ok(await WarehouseRepository.GetByWarehouseId(id));
+
+            return Ok(await _WarehouseService.GetByWarehouseId(id));
+
         }
 
         //Add Warehouse
         [HttpPost("/Warehouse")]
         public async Task<IActionResult> AddWarehouse([FromForm] CreateWarehouseDto warehouse)
         {
-            await WarehouseRepository.AddWarehouse(warehouse);
-            return Ok(warehouse);
+
+           return Ok(await _WarehouseService.AddWarehouse(warehouse));
+          
         }
 
         //Update Warehouse
         [HttpPut("/Warehouse/{id}")]
         public async Task<IActionResult> UpdateWarehouse(int id, [FromForm] CreateWarehouseDto warehouse)
         {
-            var UpdateWarehouse = await WarehouseRepository.UpdateWarehouse(id, warehouse);
-            if (UpdateWarehouse == null)
-            {
-                return NotFound($"Warehouse with ID {id} is not found");
-            }
-            return Ok(UpdateWarehouse);
+
+            return Ok(await _WarehouseService.UpdateWarehouse(id, warehouse));
+      
         }
 
         //Delete Warehouse
         [HttpDelete("/Warehouse{id}")]
         public async Task<IActionResult> DeleteWarehouse(int id)
         {
-            var DeleteWarehouse = await WarehouseRepository.DeleteWarehouse(id);
-            if (DeleteWarehouse == false)
-            {
-                return NotFound($"Warehouse with ID {id} is not found");
-            }
-            return Ok($"Warehouse with ID {id} is Deleted Successfully");
+
+            return Ok(await _WarehouseService.DeleteWarehouse(id));
+
         }
     }
 }
