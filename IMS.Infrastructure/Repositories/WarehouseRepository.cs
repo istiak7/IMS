@@ -93,39 +93,31 @@ namespace IMS.Infrastructure.Repositories
 
         public async Task<ResponseModel> UpdateWarehouse(int id, CreateWarehouseDto warehouse)
         {
-            try
+
+            var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
+
+            if (ExistingWarehouse == null)
             {
-                var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
-
-                if (ExistingWarehouse == null)
-                {
-                    return Utilities.GetNoDataFoundMsg();
-                }
-
-                ExistingWarehouse.Name = warehouse.Name;
-                ExistingWarehouse.Location = warehouse.Location;
-                ExistingWarehouse.PhoneNumber = warehouse.Phone;
-                ExistingWarehouse.UpdatedAt = DateTime.UtcNow;
-
-                Context.Warehouses.Update(ExistingWarehouse);
-                int affectedRows = await Context.SaveChangesAsync();
-
-                if (affectedRows > 0)
-                {
-                    return Utilities.GetSuccessMsg("Successfully Updated");
-                }
-
-                else
-                {
-                    return Utilities.GetInternalServerErrorMsg("An Error Occurs");
-                }
+                return Utilities.GetNoDataFoundMsg();
             }
-            catch (Exception)
+
+            ExistingWarehouse.Name = warehouse.Name;
+            ExistingWarehouse.Location = warehouse.Location;
+            ExistingWarehouse.PhoneNumber = warehouse.Phone;
+            ExistingWarehouse.UpdatedAt = DateTime.UtcNow;
+
+            Context.Warehouses.Update(ExistingWarehouse);
+            int affectedRows = await Context.SaveChangesAsync();
+
+            if(affectedRows > 0)
             {
-
-                throw;
+                return Utilities.GetSuccessMsg("Successfully Updated");
             }
-            
+
+            else
+            {
+                return Utilities.GetInternalServerErrorMsg("An Error Occurs");
+            }
         }
 
         public async Task<ResponseModel> DeleteWarehouse(int id)
