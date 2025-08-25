@@ -1,4 +1,6 @@
-﻿using IMS.Application.Dtos.WarehouseInfo;
+﻿using ClosedXML.Excel;
+using IMS.Application.Dtos.WarehouseInfo;
+using IMS.Application.Helpers;
 using IMS.Application.ServiceInterface;
 using IMS.Application.Services;
 using Inventory_Management_System.Repositories.Interfaces;
@@ -61,6 +63,24 @@ namespace Inventory_Management_System.Controllers
 
             return Ok(await _WarehouseService.DeleteWarehouse(id));
 
+        }
+
+        //Download Excel Sheet
+        [HttpGet("/download-ExcelSheet")]
+        public async Task<IActionResult> DownloadExcel()
+        {
+           
+            try
+            {
+                var ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                var Filename = "WarehouseInfo";
+                var Content = await _WarehouseService.DownloadWarehouseInfoExcel();
+                return File(Content, ContentType, Filename);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, Utilities.GetInternalServerErrorMsg(ex));
+            }
         }
     }
 }

@@ -15,5 +15,6 @@ namespace IMS.Application.ServiceInterface
         Task<ResponseModel> AddWarehouse(CreateWarehouseDto warehouse);
         Task<ResponseModel> UpdateWarehouse(int id, CreateWarehouseDto warehouse);
         Task<ResponseModel> DeleteWarehouse(int id);
+        Task<byte[]> DownloadWarehouseInfoExcel();
     }
 }
