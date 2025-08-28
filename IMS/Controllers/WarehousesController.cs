@@ -11,7 +11,7 @@ namespace Inventory_Management_System.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    [Authorize]
+    //[Authorize]
     public class WarehousesController : ControllerBase
     {
         private readonly IWarehouseService _WarehouseService;

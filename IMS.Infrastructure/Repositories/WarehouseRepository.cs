@@ -7,6 +7,7 @@ using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace IMS.Infrastructure.Repositories
 {
@@ -14,43 +15,78 @@ namespace IMS.Infrastructure.Repositories
     {
         private readonly ApplicationDbContext Context;
         private readonly IDapper _dapper;
-        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper)
+        private readonly IMemoryCache _cache;
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper, IMemoryCache cache)
         {
             this.Context = Context;
             _dapper = dapper;
+            _cache = cache;
         }
 
         public async Task<List<ViewWarehouseDto>> GetWarehouses()
         {
-           
-            var sql = "SELECT * FROM \"Warehouses\"";
-
-            var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
-
-            List<ViewWarehouseDto> WarehouseDto = [];
-
-            foreach (var warehouse in Warehouses)
+            var cachekey = "Warehouses";
+            if (!_cache.TryGetValue(cachekey, out List<ViewWarehouseDto>? warehouselist))
             {
-                WarehouseDto.Add(warehouse);
-            }
+                var sql = "SELECT * FROM \"Warehouses\"";
 
-            return WarehouseDto;
+                var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
+
+                warehouselist = [];
+
+                foreach (var warehouse in Warehouses)
+                {
+                    warehouselist.Add(warehouse);
+                }
+
+                _cache.Set(cachekey, warehouselist, _cacheExpiration);
+            }
+            return warehouselist;
+            //var sql = "SELECT * FROM \"Warehouses\"";
+
+            //var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
+
+            //List<ViewWarehouseDto> WarehouseDto = [];
+
+            //foreach (var warehouse in Warehouses)
+            //{
+            //    WarehouseDto.Add(warehouse);
+            //}
+
+            //return WarehouseDto;
         }
 
         public async Task<ResponseModel> GetByWarehouseId(int id)
         {
-            
-            var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
+            var cachekey = $"warehouse_{id}";
 
-            var parameters = new DynamicParameters();
-
-            parameters.Add("Id", id);
-
-            var Warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
-            
-            if(Warehouse != null)
+            if(!_cache.TryGetValue(cachekey, out ViewWarehouseDto ? warehouse))
             {
-                return Utilities.GetSuccessMsg("Successfully Data Found", Warehouse);
+                var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
+
+                var parameters = new DynamicParameters();
+
+                parameters.Add("Id", id);
+
+                warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
+
+                _cache.Set(cachekey, warehouse, _cacheExpiration);
+            }
+            
+            //var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
+
+            //var parameters = new DynamicParameters();
+
+            //parameters.Add("Id", id);
+
+            //var Warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
+
+
+            
+            if(warehouse != null)
+            {
+                return Utilities.GetSuccessMsg("Successfully Data Found", warehouse);
             }
 
             else
