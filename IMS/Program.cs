@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,7 +42,7 @@ builder.Services.AddAuthentication("Bearer")
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API Name", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "IMS", Version = "v1" });
 
     // ? JWT Authentication Setup for Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -112,6 +113,23 @@ builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register Redis distributed cache
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    //This property is set to specify the connection string for Redis
+    //The value is fetched from the application's configuration system, i.e., appsettings.json file
+    options.Configuration = builder.Configuration["RedisCacheOptions:Configuration"];
+    //This property helps in setting a logical name for the Redis cache instance. 
+    //The value is also fetched from the appsettings.json file
+    options.InstanceName = builder.Configuration["RedisCacheOptions:InstanceName"];
+});
+// Register the Redis connection multiplexer as a singleton service
+// This allows the application to interact directly with Redis for advanced scenarios
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    // Establish a connection to the Redis server using the configuration from appsettings.json
+    ConnectionMultiplexer.Connect(builder.Configuration["RedisCacheOptions:Configuration"]));
+
 
 var app = builder.Build();
 

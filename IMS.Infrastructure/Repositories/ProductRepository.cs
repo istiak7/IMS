@@ -1,38 +1,66 @@
-﻿using Inventory_Management_System.ApplicationDb;
+﻿using IMS.Application.Helpers;
+using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Dtos.Products;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Repositories.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace IMS.Infrastructure.Repositories
 {
     public class ProductRepository : IProductRepository
     {
         private readonly ApplicationDbContext Context;
-        public ProductRepository(ApplicationDbContext Context)
+        private readonly IDistributedCache _cache;
+        public ProductRepository(ApplicationDbContext Context, IDistributedCache cache)
         {
             this.Context = Context;
+            _cache = cache;
         }
 
         public async Task<List<ViewProductDto>> GetProducts()
         {
-            var Products = await Context.Products.ToListAsync();
+            var cachekey = "GetAllProduct";
+
             List<ViewProductDto> ProductDto = [];
-            foreach (var product in Products)
+
+            var cacheData = await _cache.GetStringAsync(cachekey);
+
+            if (!string.IsNullOrEmpty(cacheData))
             {
-                ViewProductDto dto = new ViewProductDto()
+                ProductDto = JsonSerializer.Deserialize<List<ViewProductDto>>(cacheData);
+                
+            }
+            else
+            {
+                var Products = await Context.Products.ToListAsync();
+                if(Products != null)
                 {
-                    Name = product.Name,
-                    Description = product.Description,
-                    Price = product.Price,
-                    BrandId = product.BrandId,
-                    CategoryId = product.CategoryId
-                    
-                };
-                ProductDto.Add(dto);
+                    var serializedData = JsonSerializer.Serialize(Products);
+                    var cacheOptions = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(10));
+                    await _cache.SetStringAsync(cachekey, serializedData, cacheOptions);
+                }
+
+
+                foreach (var product in Products)
+                {
+                    ViewProductDto dto = new ViewProductDto()
+                    {
+                        Name = product.Name,
+                        Description = product.Description,
+                        Price = product.Price,
+                        BrandId = product.BrandId,
+                        CategoryId = product.CategoryId
+
+                    };
+                    ProductDto.Add(dto);
+                }
             }
             return ProductDto;
+
         }
 
         public async Task<ViewProductDto> GetByProductId(int id)
