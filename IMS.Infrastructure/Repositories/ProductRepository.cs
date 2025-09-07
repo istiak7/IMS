@@ -1,4 +1,5 @@
 ﻿using IMS.Application.Helpers;
+using IMS.Core.Utility;
 using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Dtos.Products;
 using Inventory_Management_System.Models;
@@ -13,41 +14,23 @@ namespace IMS.Infrastructure.Repositories
 {
     public class ProductRepository : IProductRepository
     {
-        private readonly ApplicationDbContext Context;
-        private readonly IDistributedCache _cache;
-        public ProductRepository(ApplicationDbContext Context, IDistributedCache cache)
+        private readonly ApplicationDbContext _context;
+        public ProductRepository(ApplicationDbContext Context)
         {
-            this.Context = Context;
-            _cache = cache;
+            _context = Context;
         }
 
         public async Task<List<ViewProductDto>> GetProducts()
-        {
-            var cachekey = "GetAllProduct";
+        {  
 
             List<ViewProductDto> ProductDto = [];
+            
+            var Products = await _context.Products.ToListAsync();
+               
 
-            var cacheData = await _cache.GetStringAsync(cachekey);
-
-            if (!string.IsNullOrEmpty(cacheData))
-            {
-                ProductDto = JsonSerializer.Deserialize<List<ViewProductDto>>(cacheData);
-                
-            }
-            else
-            {
-                var Products = await Context.Products.ToListAsync();
-                if(Products != null)
-                {
-                    var serializedData = JsonSerializer.Serialize(Products);
-                    var cacheOptions = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(10));
-                    await _cache.SetStringAsync(cachekey, serializedData, cacheOptions);
-                }
-
-
-                foreach (var product in Products)
-                {
-                    ViewProductDto dto = new ViewProductDto()
+            foreach (var product in Products)
+             {
+                 ViewProductDto dto = new ViewProductDto()
                     {
                         Name = product.Name,
                         Description = product.Description,
@@ -57,15 +40,19 @@ namespace IMS.Infrastructure.Repositories
 
                     };
                     ProductDto.Add(dto);
-                }
             }
             return ProductDto;
 
         }
 
-        public async Task<ViewProductDto> GetByProductId(int id)
+        public async Task<ResponseModel> GetByProductId(int id)
         {
-            var Product = await Context.Products.FirstOrDefaultAsync(product => product.Id == id);
+            var Product = await _context.Products.FirstOrDefaultAsync(product => product.Id == id);
+            
+            if(Product == null)
+            {
+                return Utilities.GetNoDataFoundMsg("No Data is Found");
+            }
             ViewProductDto dto = new()
             {
                 Name = Product.Name,
@@ -74,17 +61,17 @@ namespace IMS.Infrastructure.Repositories
                 BrandId = Product.BrandId,
                 CategoryId = Product.CategoryId
             };
-            return dto;
+            return Utilities.GetSuccessMsg("ok", dto);
         }
 
-        public async Task<bool> AddProduct(CreateProductDto product)
+        public async Task<ResponseModel> AddProduct(CreateProductDto product)
         {
             Debug.WriteLine("Debug pointer 1");
 
-            var ExistingProduct = await Context.Products.FirstOrDefaultAsync(name => name.Name == product.Name);
+            var ExistingProduct = await _context.Products.FirstOrDefaultAsync(name => name.Name == product.Name);
             if (ExistingProduct != null)
             {
-                return false;
+                return Utilities.GetNoDataFoundMsg();
             }
             Debug.WriteLine("Debug pointer 2");
 
@@ -99,10 +86,10 @@ namespace IMS.Infrastructure.Repositories
             };
             try
             {
-                await Context.Products.AddAsync(NewProduct);
-                await Context.SaveChangesAsync();
+                await _context.Products.AddAsync(NewProduct);
+                await _context.SaveChangesAsync();
                 Debug.WriteLine("From try block");
-                return true;
+                return Utilities.GetSuccessMsg("",NewProduct);
             }
             catch (Exception)
             {
@@ -112,12 +99,12 @@ namespace IMS.Infrastructure.Repositories
             
         }
 
-        public async Task<ViewProductDto> UpdateProduct(int id, CreateProductDto product)
+        public async Task<ResponseModel> UpdateProduct(int id, CreateProductDto product)
         {
-            var ExistingProduct = await Context.Products.FirstOrDefaultAsync(i => i.Id == id);
+            var ExistingProduct = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
             if (ExistingProduct == null)
             {
-                return null;
+                return Utilities.GetNoDataFoundMsg();
             }
 
             ExistingProduct.Name = product.Name;
@@ -129,9 +116,9 @@ namespace IMS.Infrastructure.Repositories
 
             try
             {
-                Context.Products.Update(ExistingProduct);
-                await Context.SaveChangesAsync();
-                return new ViewProductDto
+                _context.Products.Update(ExistingProduct);
+                await _context.SaveChangesAsync();
+                var dto = new ViewProductDto
                 {
                     Name = ExistingProduct.Name,
                     Description = ExistingProduct.Description,
@@ -139,6 +126,7 @@ namespace IMS.Infrastructure.Repositories
                     BrandId = ExistingProduct.BrandId,
                     CategoryId = ExistingProduct.CategoryId
                 };
+                return Utilities.GetSuccessMsg("", dto);
             }
             
             catch(DbUpdateException)
@@ -152,16 +140,16 @@ namespace IMS.Infrastructure.Repositories
           
         }
 
-        public async Task<bool> DeleteProduct(int id)
+        public async Task<ResponseModel> DeleteProduct(int id)
         {
-            var ExistingProduct = await Context.Products.FirstOrDefaultAsync(i => i.Id == id);
+            var ExistingProduct = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
             if (ExistingProduct == null)
             {
-                return false;
+                return Utilities.GetNoDataFoundMsg();
             }
-            Context.Products.Remove(ExistingProduct);
-            await Context.SaveChangesAsync();
-            return true;
+            _context.Products.Remove(ExistingProduct);
+            await _context.SaveChangesAsync();
+            return Utilities.GetSuccessMsg("Successfully Deleted");
         }
     }
 }

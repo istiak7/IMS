@@ -1,9 +1,14 @@
 ﻿using IMS.Core.Utility;
 using Inventory_Management_System.Dtos.Products;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Inventory_Management_System.Repositories.Interfaces
+namespace IMS.Application.ServiceInterface
 {
-    public interface IProductRepository
+    public interface IProductService
     {
         Task<List<ViewProductDto>> GetProducts();
         Task<ResponseModel> GetByProductId(int id);

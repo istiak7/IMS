@@ -7,7 +7,10 @@ using Inventory_Management_System.ApplicationDb;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using System.Security.AccessControl;
+using System.Text.Json;
 
 namespace IMS.Infrastructure.Repositories
 {
@@ -15,9 +18,8 @@ namespace IMS.Infrastructure.Repositories
     {
         private readonly ApplicationDbContext Context;
         private readonly IDapper _dapper;
-        private readonly IMemoryCache _cache;
-        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
-        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper, IMemoryCache cache)
+        private readonly IDistributedCache _cache;
+        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper, IDistributedCache cache)
         {
             this.Context = Context;
             _dapper = dapper;
@@ -26,65 +28,34 @@ namespace IMS.Infrastructure.Repositories
 
         public async Task<List<ViewWarehouseDto>> GetWarehouses()
         {
-            var cachekey = "Warehouses";
-            if (!_cache.TryGetValue(cachekey, out List<ViewWarehouseDto>? warehouselist))
+          
+            List<ViewWarehouseDto> warehouseList = [];
+           
+            var sql = "SELECT * FROM \"Warehouses\"";
+
+            var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
+
+            foreach (var warehouse in Warehouses)
             {
-                var sql = "SELECT * FROM \"Warehouses\"";
-
-                var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
-
-                warehouselist = [];
-
-                foreach (var warehouse in Warehouses)
-                {
-                    warehouselist.Add(warehouse);
-                }
-
-                _cache.Set(cachekey, warehouselist, _cacheExpiration);
+               warehouseList.Add(warehouse);
             }
-            return warehouselist;
-            //var sql = "SELECT * FROM \"Warehouses\"";
+     
+            return warehouseList;
 
-            //var Warehouses = await _dapper.GetAllAsync<ViewWarehouseDto>(sql);
-
-            //List<ViewWarehouseDto> WarehouseDto = [];
-
-            //foreach (var warehouse in Warehouses)
-            //{
-            //    WarehouseDto.Add(warehouse);
-            //}
-
-            //return WarehouseDto;
         }
 
         public async Task<ResponseModel> GetByWarehouseId(int id)
         {
-            var cachekey = $"warehouse_{id}";
 
-            if(!_cache.TryGetValue(cachekey, out ViewWarehouseDto ? warehouse))
-            {
-                var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
+           var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
 
-                var parameters = new DynamicParameters();
+           var parameters = new DynamicParameters();
 
-                parameters.Add("Id", id);
+           parameters.Add("Id", id);
 
-                warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
+           var warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
 
-                _cache.Set(cachekey, warehouse, _cacheExpiration);
-            }
-            
-            //var sql = $"SELECT * FROM \"Warehouses\" WHERE \"Id\" = @Id";
-
-            //var parameters = new DynamicParameters();
-
-            //parameters.Add("Id", id);
-
-            //var Warehouse = await _dapper.GetByIdAsync<ViewWarehouseDto>(sql, parameters);
-
-
-            
-            if(warehouse != null)
+            if (warehouse != null)
             {
                 return Utilities.GetSuccessMsg("Successfully Data Found", warehouse);
             }
@@ -147,7 +118,8 @@ namespace IMS.Infrastructure.Repositories
 
             if(affectedRows > 0)
             {
-                return Utilities.GetSuccessMsg("Successfully Updated");
+
+                return Utilities.GetSuccessMsg("Successfully Updated", ExistingWarehouse);
             }
 
             else
@@ -171,6 +143,7 @@ namespace IMS.Infrastructure.Repositories
 
             if(affectedRow > 0)
             {
+                
                 return Utilities.GetSuccessMsg("Successfully Deleted", ExistingWarehouse);
             }
 
