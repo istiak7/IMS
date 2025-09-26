@@ -75,13 +75,7 @@ namespace IMS.Infrastructure.Repositories
                 return Utilities.GetAlreadyExistMsg("The Data You Already Added");
             }
 
-            var NewWarehouse = new Warehouse
-            {
-                Name = warehouse.Name,
-                Location = warehouse.Location,
-                PhoneNumber = warehouse.Phone,
-                CreatedAt = DateTime.UtcNow
-            };
+            var NewWarehouse = Warehouse.Create(warehouse.Name, warehouse.Location, warehouse.Phone);
 
             await Context.Warehouses.AddAsync(NewWarehouse);
 
@@ -108,10 +102,7 @@ namespace IMS.Infrastructure.Repositories
                 return Utilities.GetNoDataFoundMsg();
             }
 
-            ExistingWarehouse.Name = warehouse.Name;
-            ExistingWarehouse.Location = warehouse.Location;
-            ExistingWarehouse.PhoneNumber = warehouse.Phone;
-            ExistingWarehouse.UpdatedAt = DateTime.UtcNow;
+            ExistingWarehouse.Update(warehouse.Name, warehouse.Location, warehouse.Phone);
 
             Context.Warehouses.Update(ExistingWarehouse);
             int affectedRows = await Context.SaveChangesAsync();
