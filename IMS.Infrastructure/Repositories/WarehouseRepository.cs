@@ -16,12 +16,12 @@ namespace IMS.Infrastructure.Repositories
 {
     public class WarehouseRepository : IWarehouseRepository
     {
-        private readonly ApplicationDbContext Context;
+        private readonly ApplicationDbContext _context;
         private readonly IDapper _dapper;
         private readonly IDistributedCache _cache;
-        public WarehouseRepository(ApplicationDbContext Context, IDapper dapper, IDistributedCache cache)
+        public WarehouseRepository(ApplicationDbContext context, IDapper dapper, IDistributedCache cache)
         {
-            this.Context = Context;
+            _context = context;
             _dapper = dapper;
             _cache = cache;
         }
@@ -68,7 +68,7 @@ namespace IMS.Infrastructure.Repositories
 
         public async Task<ResponseModel> AddWarehouse(CreateWarehouseDto warehouse)
         {
-            var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(name => name.Name == warehouse.Name);
+            var ExistingWarehouse = await _context.Warehouses.FirstOrDefaultAsync(name => name.Name == warehouse.Name);
 
             if (ExistingWarehouse != null)
             {
@@ -77,9 +77,9 @@ namespace IMS.Infrastructure.Repositories
 
             var NewWarehouse = Warehouse.Create(warehouse.Name, warehouse.Location, warehouse.Phone);
 
-            await Context.Warehouses.AddAsync(NewWarehouse);
+            await _context.Warehouses.AddAsync(NewWarehouse);
 
-            int affectedRows = await Context.SaveChangesAsync();
+            int affectedRows = await _context.SaveChangesAsync();
 
             if(affectedRows > 0)
             {
@@ -95,7 +95,7 @@ namespace IMS.Infrastructure.Repositories
         public async Task<ResponseModel> UpdateWarehouse(int id, CreateWarehouseDto warehouse)
         {
 
-            var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
+            var ExistingWarehouse = await _context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
 
             if (ExistingWarehouse == null)
             {
@@ -104,8 +104,8 @@ namespace IMS.Infrastructure.Repositories
 
             ExistingWarehouse.Update(warehouse.Name, warehouse.Location, warehouse.Phone);
 
-            Context.Warehouses.Update(ExistingWarehouse);
-            int affectedRows = await Context.SaveChangesAsync();
+            _context.Warehouses.Update(ExistingWarehouse);
+            int affectedRows = await _context.SaveChangesAsync();
 
             if(affectedRows > 0)
             {
@@ -121,16 +121,16 @@ namespace IMS.Infrastructure.Repositories
 
         public async Task<ResponseModel> DeleteWarehouse(int id)
         {
-            var ExistingWarehouse = await Context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
+            var ExistingWarehouse = await _context.Warehouses.FirstOrDefaultAsync(i => i.Id == id);
 
             if (ExistingWarehouse == null)
             {
                 return Utilities.GetNoDataFoundMsg();
             }
 
-            Context.Warehouses.Remove(ExistingWarehouse);
+            _context.Warehouses.Remove(ExistingWarehouse);
 
-            int affectedRow = await Context.SaveChangesAsync();
+            int affectedRow = await _context.SaveChangesAsync();
 
             if(affectedRow > 0)
             {

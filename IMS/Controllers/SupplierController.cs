@@ -7,7 +7,6 @@ namespace Inventory_Management_System.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    [Authorize]
     public class SupplierController : ControllerBase
     {
         private readonly ISupplierRepository SupplierRepository;

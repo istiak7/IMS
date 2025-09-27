@@ -20,6 +20,13 @@ namespace Inventory_Management_System.Models
             PhoneNumber = phoneNumber;
             CreatedAt = DateTime.UtcNow;
         }
+        private void UpdateWarehouseDetails(string name, string location, string phoneNumber)
+        {
+            Name = name;
+            Location = location;
+            PhoneNumber = phoneNumber;
+            UpdatedAt = DateTime.UtcNow;
+        }
         private static void ValidationFields(string name, string location, string phoneNumber)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -50,7 +57,7 @@ namespace Inventory_Management_System.Models
 
         public void Update(string name, string location, string phoneNumber)
         {
-            SetWarehouseDetails(name, location, phoneNumber);
+            UpdateWarehouseDetails(name, location, phoneNumber);
         }
     }
 }

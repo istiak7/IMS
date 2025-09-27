@@ -50,14 +50,8 @@ namespace IMS.Infrastructure.Repositories
             {
                 return false;
             }
-            var NewSupplier = new Supplier
-            {
-                Name = supplier.Name,
-                Phone = supplier.Phone,
-                Email = supplier.Email,
-                Address = supplier.Address,
-                CreatedAt = DateTime.UtcNow
-            };
+            var NewSupplier = Supplier.Create(supplier.Name, supplier.Phone, supplier.Email, supplier.Address);
+
             await Context.Suppliers.AddAsync(NewSupplier);
             await Context.SaveChangesAsync();
             return true;
@@ -71,11 +65,7 @@ namespace IMS.Infrastructure.Repositories
                 return null;
             }
 
-            ExistingSupplier.Name = supplier.Name;
-            ExistingSupplier.Phone = supplier.Phone;
-            ExistingSupplier.Email = supplier.Email;
-            ExistingSupplier.Address = supplier.Address;
-            ExistingSupplier.UpdatedAt = DateTime.UtcNow;
+            ExistingSupplier.Update(supplier.Name, supplier.Phone, supplier.Email, supplier.Address);
 
             Context.Suppliers.Update(ExistingSupplier);
             await Context.SaveChangesAsync();
